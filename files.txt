@@ -1,0 +1,10 @@
+backend/
+  - main.py
+  - models.py
+  - database.py
+frontend/
+  - index.html
+  - script.js
+  - styles.css
+.gitignore
+README.md 
