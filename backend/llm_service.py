@@ -1,162 +1,192 @@
-import httpx
-from typing import Dict, Optional
-import json
-import os
-import logging
-from dotenv import load_dotenv
-import random
+"""
+Recipe generation service using LLM for recipes and Stable Diffusion for images.
+"""
 
-# Set up logging
+import httpx
+from typing import Dict, Optional, List
+import logging
+import os
+from dotenv import load_dotenv
+import json
+import base64
+from io import BytesIO
+
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Load environment variables
 load_dotenv()
-
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
-if not HUGGINGFACE_API_KEY:
-    raise ValueError("HUGGINGFACE_API_KEY not found in .env file")
+STABILITY_API_KEY = os.getenv("STABILITY_API_KEY")
 
-API_URL = "https://api-inference.huggingface.co/models/"
-IMAGE_MODEL = "CompVis/stable-diffusion-v1-4"
-
-headers = {"Authorization": f"Bearer {HUGGINGFACE_API_KEY}"}
-
-# Mood-based recipe templates
-RECIPES = {
-    "happy": [
-        {
-            "name": "Colorful Buddha Bowl",
-            "ingredients": "- 1 cup quinoa\n- 1 sweet potato, cubed\n- 1 avocado\n- Mixed fresh vegetables\n- Tahini dressing",
-            "instructions": "1. Cook quinoa\n2. Roast sweet potato\n3. Arrange bowl with fresh veggies\n4. Top with avocado and dressing",
-            "cooking_time": "25 minutes",
-            "difficulty_level": "easy",
-            "image_prompt": "colorful buddha bowl with quinoa, roasted vegetables, and avocado, overhead shot, food photography"
-        },
-        {
-            "name": "Rainbow Fruit Smoothie",
-            "ingredients": "- Mixed berries\n- Banana\n- Greek yogurt\n- Honey\n- Granola topping",
-            "instructions": "1. Blend fruits and yogurt\n2. Pour into glass\n3. Top with granola\n4. Drizzle honey",
-            "cooking_time": "10 minutes",
-            "difficulty_level": "easy",
-            "image_prompt": "vibrant fruit smoothie with berries and granola topping, bright food photography"
-        }
-    ],
-    "sad": [
-        {
-            "name": "Creamy Mac and Cheese",
-            "ingredients": "- 2 cups macaroni\n- 2 cups cheddar cheese\n- 1 cup milk\n- Butter and flour\n- Salt and pepper",
-            "instructions": "1. Cook pasta\n2. Make cheese sauce\n3. Combine and bake\n4. Serve hot",
-            "cooking_time": "30 minutes",
-            "difficulty_level": "easy",
-            "image_prompt": "creamy baked mac and cheese, melted cheese, comfort food photography"
-        },
-        {
-            "name": "Chocolate Chip Cookies",
-            "ingredients": "- 2 cups flour\n- 1 cup butter\n- Brown sugar\n- Chocolate chips\n- Vanilla extract",
-            "instructions": "1. Mix ingredients\n2. Form cookies\n3. Bake until golden\n4. Enjoy warm",
-            "cooking_time": "20 minutes",
-            "difficulty_level": "easy",
-            "image_prompt": "freshly baked chocolate chip cookies, warm and gooey, comfort food photography"
-        }
-    ],
-    "excited": [
-        {
-            "name": "Party Pizza",
-            "ingredients": "- Pizza dough\n- Tomato sauce\n- Mozzarella\n- Favorite toppings\n- Fresh basil",
-            "instructions": "1. Roll out dough\n2. Add toppings\n3. Bake until bubbly\n4. Slice and serve",
-            "cooking_time": "25 minutes",
-            "difficulty_level": "medium",
-            "image_prompt": "homemade pizza with melted cheese and fresh toppings, rustic food photography"
-        }
-    ],
-    "energetic": [
-        {
-            "name": "Power Protein Bowl",
-            "ingredients": "- Grilled chicken\n- Quinoa\n- Mixed vegetables\n- Avocado\n- Lemon dressing",
-            "instructions": "1. Cook quinoa\n2. Grill chicken\n3. Assemble bowl\n4. Add dressing",
-            "cooking_time": "30 minutes",
-            "difficulty_level": "medium",
-            "image_prompt": "healthy protein bowl with grilled chicken and quinoa, bright food photography"
-        }
-    ]
-}
+# API endpoints
+LLM_API_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta"
+STABILITY_API_URL = "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image"
 
 async def generate_recipe(mood: str, cuisine_type: Optional[str] = None) -> Dict:
-    """Get a random recipe for the given mood"""
-    mood = mood.lower()
-    recipes = RECIPES.get(mood, RECIPES["happy"])
-    recipe = random.choice(recipes)
-    return recipe
-
-async def generate_recipe_image(recipe_name: str) -> str:
-    """Generate an image for the recipe"""
+    """
+    Generate a recipe using LLM and create matching image using Stable Diffusion.
+    """
     try:
-        # Get the recipe's image prompt
-        recipe_prompt = None
-        for mood_recipes in RECIPES.values():
-            for recipe in mood_recipes:
-                if recipe["name"] == recipe_name:
-                    recipe_prompt = recipe.get("image_prompt")
-                    break
-            if recipe_prompt:
-                break
-
-        prompt = recipe_prompt or f"professional food photography of {recipe_name}, styled food, natural lighting"
+        cuisine_prompt = f" and {cuisine_type} cuisine" if cuisine_type else ""
         
-        async with httpx.AsyncClient() as client:
+        # Get the appropriate mood guideline
+        mood_guidelines = {
+            "happy": "Light, colorful, fresh dishes with vibrant ingredients",
+            "sad": "Warm, comforting, indulgent dishes that feel like a hug",
+            "excited": "Fun, party-friendly, shareable dishes that bring joy",
+            "energetic": "Nutritious, protein-rich, energizing meals for vitality"
+        }
+        mood_guideline = mood_guidelines.get(mood.lower(), "Balanced, flavorful dishes")
+        
+        prompt = f"""<|system|>
+You are a professional chef creating unique recipes based on people's moods.
+Always respond with a valid JSON object. Format ingredients and instructions as proper lists.
+
+<|user|>
+Create a unique recipe for someone feeling {mood}{cuisine_prompt}.
+
+Mood Guideline: {mood_guideline}
+
+Return ONLY a JSON object in this exact format:
+{{
+    "name": "Unique and descriptive food recipe name",
+    "ingredients": "- ingredient 1 with amount\\n- ingredient 2 with amount",
+    "instructions": "1. First step\\n2. Second step",
+    "cooking_time": "XX minutes",
+    "difficulty_level": "easy/medium/hard",
+    "cuisine_type": "specific cuisine type",
+    "category": "main/appetizer/dessert/etc"
+}}
+
+<|assistant|>"""
+
+        headers = {
+            "Authorization": f"Bearer {HUGGINGFACE_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
-                f"{API_URL}{IMAGE_MODEL}",
-                headers=headers,
+                LLM_API_URL,
                 json={
                     "inputs": prompt,
                     "parameters": {
-                        "negative_prompt": "text, watermark, blurry, cartoon",
-                        "num_inference_steps": 25,
-                        "guidance_scale": 7.5
+                        "max_new_tokens": 1000,
+                        "temperature": 0.7,
+                        "top_p": 0.9,
+                        "do_sample": True,
+                        "return_full_text": False
                     }
                 },
-                timeout=30.0
+                headers=headers
+            )
+            response.raise_for_status()
+            
+            recipe_text = response.json()[0]["generated_text"]
+            logger.info(f"Raw LLM response: {recipe_text}")
+            
+            # Clean and parse JSON
+            recipe_text = recipe_text.strip()
+            if not recipe_text.startswith('{'):
+                recipe_text = recipe_text[recipe_text.find('{'):]
+            if not recipe_text.endswith('}'):
+                recipe_text = recipe_text[:recipe_text.rfind('}')+1]
+            
+            recipe_data = json.loads(recipe_text)
+            
+            # Generate matching image
+            image_url = await generate_food_image(recipe_data)
+            recipe_data["image_url"] = image_url
+            recipe_data["moods"] = mood.lower()
+
+            logger.info(f"Generated recipe: {recipe_data['name']} for mood: {mood}")
+            return recipe_data
+
+    except Exception as e:
+        logger.error(f"Error generating recipe: {str(e)}")
+        logger.error(f"Full error details: {e.__class__.__name__}")
+        raise
+
+async def generate_food_image(recipe_data: Dict) -> str:
+    """
+    Generate a food image using Stable Diffusion based on recipe details.
+    """
+    try:
+        # Create a detailed prompt for the image
+        ingredients_list = recipe_data['ingredients'].split('\n')[:3]
+        ingredients_text = ', '.join([ing.strip('- ').split(',')[0] for ing in ingredients_list])
+        
+        prompt = f"""Professional food photography of {recipe_data['name']}.
+        A beautiful {recipe_data['cuisine_type']} {recipe_data['category']} dish.
+        Made with {ingredients_text}.
+        Food photography, professional lighting, high-end restaurant presentation,
+        centered composition, shallow depth of field, soft natural lighting,
+        garnished, styled food photography, 4k, high resolution, hyperrealistic"""
+
+        # Configure image generation
+        payload = {
+            "text_prompts": [
+                {
+                    "text": prompt,
+                    "weight": 1
+                },
+                {
+                    "text": "blurry, text, watermark, logo, pixelated, low quality, cartoon, drawing, anime, illustration, painting, rendered, artificial",
+                    "weight": -1
+                }
+            ],
+            "cfg_scale": 8,
+            "height": 1024,
+            "width": 1024,
+            "samples": 1,
+            "steps": 40,
+            "style_preset": "photographic"
+        }
+
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {STABILITY_API_KEY}"
+        }
+
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                STABILITY_API_URL,
+                json=payload,
+                headers=headers
             )
             
-            if response.status_code == 200:
-                # Create a unique filename
-                image_filename = f"food_{recipe_name.lower().replace(' ', '_')}_{os.urandom(4).hex()}.png"
+            if response.status_code != 200:
+                logger.error(f"Stability API Error: {response.status_code}")
+                logger.error(f"Response content: {response.content}")
+                return None
                 
-                # Use absolute path
-                image_dir = os.path.join(os.path.dirname(__file__), "static", "images")
-                image_path = os.path.join(image_dir, image_filename)
-                
-                # Ensure directory exists
-                os.makedirs(image_dir, exist_ok=True)
-                
-                # Save the image
-                with open(image_path, "wb") as f:
-                    f.write(response.content)
-                
-                logger.info(f"Image saved to: {image_path}")
-                return f"/static/images/{image_filename}"
+            # Get the generated image
+            result = response.json()
+            logger.info(f"Stability API Response: {result}")
+            
+            if "artifacts" in result and len(result["artifacts"]) > 0:
+                image_data = result["artifacts"][0]["base64"]
+                return f"data:image/png;base64,{image_data}"
             else:
-                logger.error(f"Image generation failed: {response.status_code} - {response.text}")
-                return get_fallback_image_url(recipe_name)
+                logger.error("No image generated in response")
+                logger.error(f"Full response: {result}")
+                return None
 
     except Exception as e:
         logger.error(f"Error generating image: {str(e)}")
-        return get_fallback_image_url(recipe_name)
+        if hasattr(e, 'response'):
+            logger.error(f"Response content: {e.response.content}")
+        return None
 
-def get_fallback_image_url(recipe_name: str) -> str:
-    """Get a fallback image URL based on recipe type"""
-    recipe_type_images = {
-        "bowl": "https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38",
-        "smoothie": "https://images.unsplash.com/photo-1505252585461-04db1eb84625",
-        "pasta": "https://images.unsplash.com/photo-1563379926898-05f4575a45d8",
-        "cookie": "https://images.unsplash.com/photo-1499636136210-6f4ee915583e",
-        "pizza": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38"
-    }
-    
-    # Find matching image based on recipe name
-    for key, url in recipe_type_images.items():
-        if key.lower() in recipe_name.lower():
-            return url
-    
-    # Default food image
-    return "https://images.unsplash.com/photo-1546069901-ba9599a7e63c"
+async def get_recipe_suggestions(mood: str, count: int = 3) -> List[Dict]:
+    """
+    Get multiple recipe suggestions for a given mood.
+    """
+    recipes = []
+    for _ in range(count):
+        recipe = await generate_recipe(mood)
+        recipes.append(recipe)
+    return recipes

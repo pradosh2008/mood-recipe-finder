@@ -1,164 +1,120 @@
-# Mood Recipe Finder
+# Mood-Based Recipe Generator
 
-A web application that suggests recipes based on your current mood. Whether you're happy, sad, excited, or energetic, this app will recommend the perfect recipe to match your emotional state.
+An AI-powered application that generates personalized recipes based on your mood. The application uses state-of-the-art language models to create unique recipes and generates matching food images using AI.
 
 ## Features
 
-- Mood-based recipe recommendations
-- Interactive UI with emoji mood selectors
-- Recipe display with images, ingredients, and instructions
-- Option to get alternative recipes for the same mood
-- Responsive design that works on both desktop and mobile devices
+- 🎯 Mood-based recipe generation
+- 🖼️ AI-generated food images
+- 🌎 Cuisine type specification
+- 📝 Detailed ingredients and instructions
+- 🕒 Cooking time and difficulty estimates
+- 💡 Multiple recipe suggestions
 
-## Tech Stack
+## Technology Stack
 
-### Backend
-- FastAPI (Python web framework)
-- SQLAlchemy (ORM)
-- SQLite (Database)
+- **Backend:**
+  - FastAPI (Python web framework)
+  - Hugging Face's Zephyr-7b-beta for recipe generation
+  - Stability AI for food image generation
+  
+- **Frontend:**
+  - HTML/CSS/JavaScript
+  - Responsive design
+  - Real-time API integration
 
-### Frontend
-- HTML5
-- CSS3
-- Vanilla JavaScript
+## Prerequisites
+
+- Python 3.8 or higher
+- API keys for:
+  - Hugging Face (for recipe generation)
+  - Stability AI (for image generation)
 
 ## Installation
 
-### Backend Setup
-
 1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/mood-recipe-finder.git
+   cd mood-recipe-finder
+   ```
 
 2. Create and activate a virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
 3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-4. Start the backend server:
+4. Create a `.env` file in the root directory:
+   ```env
+   HUGGINGFACE_API_KEY=your_huggingface_key
+   STABILITY_API_KEY=your_stability_key
+   ```
 
-The backend will be running at `http://localhost:8000`
+## Running the Application
 
-### Frontend Setup
+1. Start the backend server:
+   ```bash
+   uvicorn backend.main:app --reload
+   ```
 
-1. Navigate to the frontend directory:
+2. Open `frontend/index.html` in your web browser
 
-
-2. Open `index.html` in your web browser or serve it using a local server:
-
-The frontend will be accessible at `http://localhost:8080`
-
-## Usage
-
-1. Ensure both backend and frontend servers are running
-2. Open your web browser and navigate to `http://localhost:8080`
-3. Click on an emoji that matches your current mood
-4. View the recommended recipe with ingredients and instructions
-5. Click "Get Another Recipe" for more suggestions matching your mood
+The API will be available at `http://localhost:8000`
 
 ## API Endpoints
 
-- `GET /recipes/{mood}`: Get a random recipe for the specified mood
-  - Available moods: happy, sad, excited, energetic
-  - Returns: Recipe object with name, ingredients, instructions, and image URL
+### GET /recipes/{mood}
+Generate a recipe based on mood.
+- Parameters:
+  - `mood` (path): User's mood (e.g., happy, sad, excited)
+  - `cuisine_type` (query, optional): Preferred cuisine type
+
+### GET /recipes/{mood}/suggestions
+Get multiple recipe suggestions.
+- Parameters:
+  - `mood` (path): User's mood
+  - `count` (query, optional): Number of recipes to generate (default: 3)
 
 ## Project Structure
-
+```
 mood-recipe-finder/
 ├── backend/
-│ ├── main.py # FastAPI application and routes
-│ ├── models.py # SQLAlchemy models
-│ └── database.py # Database configuration
+│   ├── main.py           # FastAPI application and endpoints
+│   └── llm_service.py    # LLM and image generation logic
 ├── frontend/
-│ ├── index.html # Main HTML file
-│ ├── styles.css # Styling
-│ └── script.js # Frontend JavaScript
-├── requirements.txt # Python dependencies
-├── README.md # Project documentation
-└── LICENSE # MIT license
+│   ├── index.html        # Main application page
+│   ├── styles.css        # Application styling
+│   └── script.js         # Frontend logic
+├── requirements.txt      # Python dependencies
+├── .env                  # Environment variables
+├── .gitignore
+└── README.md
+```
 
+## Environment Variables
 
-## Development
-
-To add new recipes or modify existing ones, edit the `SAMPLE_RECIPES` list in `backend/main.py`. Each recipe should include:
-- name
-- ingredients
-- instructions
-- mood
-- image_url
+- `HUGGINGFACE_API_KEY`: Your Hugging Face API key for accessing the LLM
+- `STABILITY_API_KEY`: Your Stability AI API key for image generation
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+2. Create a feature branch: `git checkout -b feature-name`
+3. Commit changes: `git commit -am 'Add feature'`
+4. Push to the branch: `git push origin feature-name`
+5. Submit a Pull Request
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Author
-
-Pradosh Kumar Jena
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Acknowledgments
 
-- Recipe images from Unsplash
-- Emoji support for mood selection
-- FastAPI for the efficient backend
-- SQLAlchemy for database management
-
-
-How can you push the project to github
-
-1. First, you need to create a new repository on GitHub:
-Go to GitHub
-Click the "+" icon in the top right corner
-Select "New repository"
-Name it "mood-recipe-finder"
-Don't initialize it with any files (no README, no .gitignore)
-Click "Create repository"
-
-Then, if this is a new local repository, run these commands in your project directory:
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/pradosh2008/mood-recipe-finder.git
-git push -u origin main
-
-Make sure that:
-1. You're logged into GitHub in your terminal/Git client
-The repository name matches exactly (case-sensitive)
-Your GitHub username is correct in the URL
-You have the necessary permissions for the repository
-If you're using HTTPS, you might need to enter your GitHub credentials when pushing. If you're using SSH, ensure your SSH keys are properly set up with GitHub.
-
-To check remote
-git remote -v
-origin  https://github.com/pradosh2008/mood-recipe-finder.git (fetch)
-origin  https://github.com/pradosh2008/mood-recipe-finder.git (push)
-1. (fetch): The URL used when pulling/fetching data FROM GitHub
-(push): The URL used when pushing data TO GitHub
-
-(fetch) is your "download" URL
-(push) is your "upload" URL
-
-## Environment Setup
-
-1. Get a free API key from Hugging Face:
-   - Go to https://huggingface.co/
-   - Create an account
-   - Go to Settings -> Access Tokens
-   - Create a new token with read access
-
-2. Create a `.env` file in the project root:   ```
-   HUGGINGFACE_API_KEY=your_huggingface_api_key_here   ```
-
-## New Features in v2
-- Dynamic recipe generation using AI
-- AI-generated food images
-- Extended recipe details (cooking time, difficulty level, cuisine type)
-- Persistent storage of generated recipes
-- More detailed recipe information
-
-[Rest of the README remains the same...]
+- Hugging Face for providing the LLM API
+- Stability AI for the image generation API
+- FastAPI team for the excellent web framework

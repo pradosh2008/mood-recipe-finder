@@ -1,10 +1,12 @@
-backend/
-  - main.py
-  - models.py
-  - database.py
-frontend/
-  - index.html
-  - script.js
-  - styles.css
-.gitignore
-README.md 
+mood-recipe-finder/
+├── backend/
+│   ├── main.py
+│   └── llm_service.py
+├── frontend/
+│   ├── index.html
+│   ├── styles.css
+│   └── script.js
+├── requirements.txt
+├── .env
+├── .gitignore
+└── README.md

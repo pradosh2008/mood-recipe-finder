@@ -3,30 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mood Recipe Finder</title>
+    <title>Mood Food - Recipe Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <meta name="color-scheme" content="dark">
 </head>
 <body>
     <div class="container">
-        <h1>How are you feeling today?</h1>
-        <div class="mood-buttons">
-            <button onclick="getRecipe('happy')">😊 Happy</button>
-            <button onclick="getRecipe('sad')">😢 Sad</button>
-            <button onclick="getRecipe('excited')">🎉 Excited</button>
-            <button onclick="getRecipe('energetic')">⚡ Energetic</button>
+        <header>
+            <h1>What's your mood today?</h1>
+            <p class="subtitle">Let's find the perfect recipe that matches how you feel</p>
+        </header>
+
+        <div class="mood-container">
+            <button class="mood-btn" data-mood="happy">
+                <span class="emoji">😊</span>
+                <span class="mood-text">Happy</span>
+            </button>
+            <button class="mood-btn" data-mood="sad">
+                <span class="emoji">🥺</span>
+                <span class="mood-text">Comfort</span>
+            </button>
+            <button class="mood-btn" data-mood="excited">
+                <span class="emoji">🎉</span>
+                <span class="mood-text">Excited</span>
+            </button>
+            <button class="mood-btn" data-mood="energetic">
+                <span class="emoji">⚡</span>
+                <span class="mood-text">Energetic</span>
+            </button>
         </div>
-        <div id="loading" class="loading hidden">
-            <div class="spinner"></div>
+
+        <div class="recipe-card" id="recipe-container" style="display: none;">
+            <div class="recipe-image">
+                <img id="recipe-img" src="" alt="Recipe Image">
+            </div>
+            <div class="recipe-content">
+                <h2 id="recipe-name"></h2>
+                
+                <div class="recipe-meta">
+                    <span class="time">⏱️ <span id="cooking-time"></span></span>
+                    <span class="difficulty">📊 <span id="difficulty-level"></span></span>
+                </div>
+
+                <div class="recipe-section">
+                    <h3>Ingredients</h3>
+                    <ul id="ingredients-list"></ul>
+                </div>
+
+                <div class="recipe-section">
+                    <h3>Instructions</h3>
+                    <ol id="instructions-list"></ol>
+                </div>
+            </div>
+        </div>
+
+        <div class="loading-container" id="loading-container" style="display: none;">
+            <div class="loading-animation">
+                <div class="cooking-pot">🍳</div>
+            </div>
             <p>Cooking up your recipe...</p>
-        </div>
-        <div id="recipe-container" class="hidden">
-            <div id="recipe-image" class="recipe-image"></div>
-            <h2 id="recipe-name"></h2>
-            <h3>Ingredients:</h3>
-            <p id="ingredients"></p>
-            <h3>Instructions:</h3>
-            <p id="instructions"></p>
-            <button onclick="getNewRecipe()" class="new-recipe-btn">Get Another Recipe</button>
         </div>
     </div>
     <script src="script.js"></script>
