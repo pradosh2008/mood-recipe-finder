@@ -106,3 +106,59 @@ Pradosh Kumar Jena
 - Emoji support for mood selection
 - FastAPI for the efficient backend
 - SQLAlchemy for database management
+
+
+How can you push the project to github
+
+1. First, you need to create a new repository on GitHub:
+Go to GitHub
+Click the "+" icon in the top right corner
+Select "New repository"
+Name it "mood-recipe-finder"
+Don't initialize it with any files (no README, no .gitignore)
+Click "Create repository"
+
+Then, if this is a new local repository, run these commands in your project directory:
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com/pradosh2008/mood-recipe-finder.git
+git push -u origin main
+
+Make sure that:
+1. You're logged into GitHub in your terminal/Git client
+The repository name matches exactly (case-sensitive)
+Your GitHub username is correct in the URL
+You have the necessary permissions for the repository
+If you're using HTTPS, you might need to enter your GitHub credentials when pushing. If you're using SSH, ensure your SSH keys are properly set up with GitHub.
+
+To check remote
+git remote -v
+origin  https://github.com/pradosh2008/mood-recipe-finder.git (fetch)
+origin  https://github.com/pradosh2008/mood-recipe-finder.git (push)
+1. (fetch): The URL used when pulling/fetching data FROM GitHub
+(push): The URL used when pushing data TO GitHub
+
+(fetch) is your "download" URL
+(push) is your "upload" URL
+
+## Environment Setup
+
+1. Get a free API key from Hugging Face:
+   - Go to https://huggingface.co/
+   - Create an account
+   - Go to Settings -> Access Tokens
+   - Create a new token with read access
+
+2. Create a `.env` file in the project root:   ```
+   HUGGINGFACE_API_KEY=your_huggingface_api_key_here   ```
+
+## New Features in v2
+- Dynamic recipe generation using AI
+- AI-generated food images
+- Extended recipe details (cooking time, difficulty level, cuisine type)
+- Persistent storage of generated recipes
+- More detailed recipe information
+
+[Rest of the README remains the same...]

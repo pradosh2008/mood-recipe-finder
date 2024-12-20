@@ -1,1 +1,10 @@
- 
+fastapi==0.68.0
+uvicorn==0.15.0
+sqlalchemy==1.4.23
+python-dotenv==1.0.0
+httpx==0.24.1
+# For Hugging Face integration
+transformers==4.31.0
+torch==2.0.1
+diffusers==0.21.4
+accelerate==0.21.0 
